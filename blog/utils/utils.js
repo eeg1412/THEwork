@@ -16,17 +16,37 @@ exports.getUserIp = function (req) {
 exports.tokenCheck = async function (token) {
     let secretOrPrivateKey = process.env.JWT_SECRET_KEY || 'test'; // 这是加密的key（密钥）
     return await new Promise((resolve, reject) => {
-        jwt.verify(token, secretOrPrivateKey, function (err, decode) {
+        jwt.verify(token, secretOrPrivateKey, async function (err, decode) {
             if (err) {  //  时间失效的时候/ 伪造的token 
                 console.info(
                     chalk.yellow('token有误！')
                 );
-                reject(err);
+                resolve(false);
             } else {
                 console.info(
                     chalk.green('token解密成功！')
                 );
-                resolve(decode);
+                let account = decode.account;
+                let params = {
+                    account: account
+                }
+                let result = await userUtils.findOne(params).catch((err) => {
+                    console.error(
+                        chalk.red('数据库查询错误！')
+                    );
+                    throw err;
+                })
+                if (!result) {
+                    resolve(false);
+                }
+                if ((result.token != token) || (result.token == '')) {
+                    console.info(
+                        chalk.yellow(account + '和数据库的token对不上,IP为：' + IP)
+                    )
+                    resolve(false);
+                } else {
+                    resolve(result);
+                }
             }
         });
     });
