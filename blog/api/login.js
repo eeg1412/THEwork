@@ -1,12 +1,13 @@
 const userUtils = require('../mongodb/utils/users');
 const chalk = require('chalk');
 var jwt = require('jsonwebtoken');
+const md5 = require('md5');
 
 module.exports = async function (req, res, next) {
     const password = req.body.password;
     const account = req.body.account;
     if (password && account) {
-        const hasUser = await userUtils.findOne({ account: account });
+        const hasUser = await userUtils.findOne({ account: account, password: md5(password) });
         if (hasUser) {
             let content = { account: account }; // 要生成token的主题信息
             let secretOrPrivateKey = process.env.JWT_SECRET_KEY || 'test'; // 这是加密的key（密钥）
